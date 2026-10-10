@@ -30,3 +30,13 @@ Bezier mode still leaves a few hairline gaps (5 clusters of 1-4 px at 1x). Not f
 - Report now has `metrics` (fills only), `metrics_with_lines`, and `gap_repair` (iterations, arcs forced to polygon, remaining).
 - New tests: `tests/test_gap_repair.py` (without repair that image shows 5 px at 1x and 96 px at 2x, so the test is meaningful).
 - Cost: about +18-30 s on a 1672x941 image; env `GAP_REPAIR_SCALES` controls it.
+
+## Follow-up: "Server wake-up timed out after 90 seconds" on the deployed site
+Cause: the default API URL was `http://localhost:10000` (nothing set in Settings), and any "Failed to fetch" (wrong URL, CORS, sleeping server)
+was treated as "waking up" and retried 15 times, re-uploading the whole image each time.
+- `web/src/api.ts`: probes `/healthz` first (CORS-aware), waits up to 150 s, then uploads once. Distinct messages for localhost-on-online-page,
+  CORS blocked, unreachable, wrong API key. Settings "Test connection" uses the same diagnosis.
+- `VITE_API_URL` (Vercel env var) can supply the default API URL.
+- Backend: `ALLOWED_ORIGINS` entries are normalized (trailing slash), `render.yaml` sets it for ai-to-vector.vercel.app,
+  Dockerfile uses `--timeout-keep-alive 75`.
+- Verified in headless Chromium with web security ON: localhost default, CORS blocked, unreachable, wrong key, and a correct setup (SVG shown).

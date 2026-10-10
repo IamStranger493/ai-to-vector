@@ -21,18 +21,83 @@ function getHeaders(_includeContentType = true): HeadersInit {
   return headers;
 }
 
+type Diagnosis = "ok" | "cors" | "unreachable";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * ok          = /healthz answered and the browser may read it (server up, CORS fine)
+ * cors        = something answered, but the browser blocked it (missing CORS header). Also what a waking
+ *               Render instance looks like for a moment, so callers keep polling before blaming CORS.
+ * unreachable = nothing answered (wrong URL, server down or still booting)
+ */
+async function probe(baseUrl: string): Promise<Diagnosis> {
+  try {
+    const res = await fetch(`${baseUrl}/healthz?_=${Date.now()}`, { method: "GET" });
+    return res.ok ? "ok" : "unreachable";
+  } catch {
+    try {
+      await fetch(`${baseUrl}/healthz?_=${Date.now()}`, { method: "GET", mode: "no-cors" });
+      return "cors";
+    } catch {
+      return "unreachable";
+    }
+  }
+}
+
+function isLocalUrl(url: string): boolean {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(url);
+}
+
+function corsMessage(): string {
+  return (
+    `The server answers but blocks this site (CORS). On Render set ALLOWED_ORIGINS=${location.origin} ` +
+    `(exact, no trailing slash) and redeploy. If the service was just waking up, try again in a minute.`
+  );
+}
+
+function unreachableMessage(baseUrl: string, seconds: number): string {
+  return (
+    `Cannot reach the API at ${baseUrl} after ${seconds}s. Check the API URL in Settings and that the Render ` +
+    `service is running (open ${baseUrl}/healthz in a new tab, it should show {"ok":true,...}).`
+  );
+}
+
 export async function testHealthz(url?: string): Promise<{ ok: boolean; message: string }> {
   const targetUrl = (url || appState.getApiUrl()).replace(/\/+$/, "");
-  try {
-    const res = await fetch(`${targetUrl}/healthz`, { method: "GET" });
-    if (!res.ok) {
-      return { ok: false, message: `Server responded with HTTP ${res.status}` };
+  const d = await probe(targetUrl);
+  if (d === "ok") return { ok: true, message: "Server connection OK!" };
+  if (d === "cors") return { ok: false, message: corsMessage() };
+  return { ok: false, message: unreachableMessage(targetUrl, 0) };
+}
+
+/** Wait until the API answers. Render free instances need about a minute to wake up. */
+async function waitForServer(baseUrl: string, onStatusUpdate?: (msg: string) => void): Promise<void> {
+  // API_WAKE_MAX_MS is a debug override (localStorage) used by tests
+  const maxWaitMs = Number(localStorage.getItem("API_WAKE_MAX_MS")) || 150000;
+  const pageIsLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
+  const started = Date.now();
+  let last: Diagnosis = "unreachable";
+
+  while (true) {
+    last = await probe(baseUrl);
+    if (last === "ok") return;
+
+    if (isLocalUrl(baseUrl) && !pageIsLocal) {
+      throw new Error(
+        `The API URL is set to ${baseUrl}, which is a localhost address, but this site is running online. ` +
+          `Open Settings and paste your Render URL (https://<name>.onrender.com).`
+      );
     }
-    const data = await res.json();
-    return data.ok ? { ok: true, message: "Server connection OK!" } : { ok: false, message: "Invalid health response" };
-  } catch (err: any) {
-    return { ok: false, message: `Could not reach server: ${err.message}` };
+
+    const elapsed = Date.now() - started;
+    if (elapsed >= maxWaitMs) break;
+    if (onStatusUpdate) onStatusUpdate(`Waiting for the server to answer (${Math.round(elapsed / 1000)}s)...`);
+    await sleep(3000);
   }
+
+  if (last === "cors") throw new Error(corsMessage());
+  throw new Error(unreachableMessage(baseUrl, Math.round(maxWaitMs / 1000)));
 }
 
 export async function submitJob(
@@ -41,59 +106,50 @@ export async function submitJob(
   onStatusUpdate?: (msg: string) => void
 ): Promise<string> {
   const baseUrl = appState.getApiUrl();
+
+  // 1. Make sure the API is awake and reachable BEFORE uploading the image (a few bytes per check)
+  await waitForServer(baseUrl, onStatusUpdate);
+
+  // 2. Upload once. Only a full queue (429) is retried.
   const formData = new FormData();
   formData.append("file", file);
   formData.append("params", JSON.stringify(params));
 
-  let attempts = 0;
-  const maxAttempts = 15; // 90 seconds backoff for waking up Render instances
-
-  while (attempts < maxAttempts) {
+  for (let attempt = 1; attempt <= 24; attempt++) {
+    let res: Response;
     try {
-      attempts++;
-      const res = await fetch(`${baseUrl}/jobs`, {
-        method: "POST",
-        headers: getHeaders(false),
-        body: formData,
-      });
-
-      if (res.status === 401) {
-        throw new Error("Authentication failed: Missing or invalid API Key. Please configure it in Settings.");
-      }
-      if (res.status === 413) {
-        throw new Error("Upload too large: Image exceeds maximum allowed size of 12 MB.");
-      }
-      if (res.status === 415) {
-        throw new Error("Unsupported image format: Only PNG, JPEG, and WEBP images are supported.");
-      }
-      if (res.status === 422) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(`Invalid parameters: ${JSON.stringify(errJson.detail || errJson)}`);
-      }
-      if (res.status === 429) {
-        if (onStatusUpdate) onStatusUpdate("Server queue is full. Retrying in 5 seconds...");
-        await new Promise((r) => setTimeout(r, 5000));
-        continue;
-      }
-      if (!res.ok) {
-        throw new Error(`Server returned error HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      return data.job_id;
+      res = await fetch(`${baseUrl}/jobs`, { method: "POST", headers: getHeaders(false), body: formData });
     } catch (err: any) {
-      if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-        if (onStatusUpdate) {
-          onStatusUpdate(`Server is waking up (attempt ${attempts}/${maxAttempts}), retrying...`);
-        }
-        await new Promise((r) => setTimeout(r, Math.min(3000 * attempts, 10000)));
-      } else {
-        throw err;
-      }
+      throw new Error(`Upload failed, the connection to the server was lost (${err?.message || "network error"}).`);
     }
+
+    if (res.status === 401) {
+      throw new Error("Authentication failed: Missing or invalid API Key. Please configure it in Settings.");
+    }
+    if (res.status === 413) {
+      throw new Error("Upload too large: Image exceeds maximum allowed size of 12 MB.");
+    }
+    if (res.status === 415) {
+      throw new Error("Unsupported image format: Only PNG, JPEG, and WEBP images are supported.");
+    }
+    if (res.status === 422) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(`Invalid parameters: ${JSON.stringify(errJson.detail || errJson)}`);
+    }
+    if (res.status === 429) {
+      if (onStatusUpdate) onStatusUpdate("Server queue is full. Retrying in 5 seconds...");
+      await sleep(5000);
+      continue;
+    }
+    if (!res.ok) {
+      throw new Error(`Server returned error HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data.job_id;
   }
 
-  throw new Error("Server wake-up timed out after 90 seconds. Please check your API URL.");
+  throw new Error("The server queue stayed full for 2 minutes. Try again later.");
 }
 
 export async function pollJob(

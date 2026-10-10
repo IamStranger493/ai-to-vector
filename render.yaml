@@ -2,15 +2,15 @@ services:
   - type: web
     name: vectorizer-api
     runtime: docker
-    dockerfilePath: Dockerfile
-    dockerContext: .
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
     plan: standard
     healthCheckPath: /healthz
     envVars:
       - key: API_KEY
         sync: false
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: "https://ai-to-vector.vercel.app"
       - key: MAX_UPLOAD_MB
         value: "12"
       - key: MAX_CONCURRENT_JOBS

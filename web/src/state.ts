@@ -108,7 +108,8 @@ class StateManager {
   public resultReport: any | null = null;
 
   public getApiUrl(): string {
-    return localStorage.getItem("API_URL") || "http://localhost:10000";
+    const fromEnv = (import.meta.env.VITE_API_URL as string | undefined) || "";
+    return (localStorage.getItem("API_URL") || fromEnv || "http://localhost:10000").replace(/\/+$/, "");
   }
 
   public setApiUrl(url: string) {

@@ -241,3 +241,18 @@ curl http://localhost:10000/jobs/a9103c80-4966-4e55-8406-0ce7fae986cf/report \
 ## License
 
 MIT License. Designed and engineered for high-fidelity vector graphics workflows.
+
+---
+
+## Troubleshooting a deployed site (Vercel + Render)
+
+The web UI now checks the API before uploading and shows the real reason when it fails:
+
+| Message in the alert | Meaning | Fix |
+|---|---|---|
+| "The API URL is set to http://localhost:10000 ... but this site is running online" | Settings has no API URL (default is localhost) | Open **Settings**, paste `https://<name>.onrender.com`, or set `VITE_API_URL` in the Vercel project env vars and redeploy |
+| "The server answers but blocks this site (CORS)" | `ALLOWED_ORIGINS` on Render does not contain the site origin | On Render set `ALLOWED_ORIGINS=https://<your-app>.vercel.app` (exact origin, no path) and redeploy. A trailing slash is accepted |
+| "Cannot reach the API at ... after 150s" | Wrong URL, service stopped, or still booting | Open `<API URL>/healthz` in a new tab; it must show `{"ok":true,...}`. Check the Render logs |
+| "Authentication failed" | `API_KEY` mismatch | Enter the same key in Settings that is set on Render |
+
+Render free instances sleep after idle and need about a minute to wake; the UI waits up to 150 s and then uploads once.
