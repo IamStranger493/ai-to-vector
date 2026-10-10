@@ -56,9 +56,14 @@ class JobManager:
         self._dispatch_task: Optional[asyncio.Task] = None
 
     def start(self):
-        self.executor = ProcessPoolExecutor(max_workers=settings.MAX_CONCURRENT_JOBS)
-        self._cleanup_task = asyncio.create_task(self._cleanup_loop())
-        self._dispatch_task = asyncio.create_task(self._dispatch_loop())
+        if self._dispatch_task is None or self._dispatch_task.done():
+            self.executor = ProcessPoolExecutor(max_workers=settings.MAX_CONCURRENT_JOBS)
+            self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+            self._dispatch_task = asyncio.create_task(self._dispatch_loop())
+
+    def ensure_started(self):
+        if self._dispatch_task is None or self._dispatch_task.done():
+            self.start()
 
     def shutdown(self):
         if self._cleanup_task:
@@ -148,6 +153,7 @@ class JobManager:
                 job.image_bytes = b""
 
     async def add_job(self, params: PipelineParams, image_bytes: bytes) -> str:
+        self.ensure_started()
         async with self.lock:
             if len(self.queue) >= settings.QUEUE_LENGTH_CAP:
                 raise ValueError("Queue is full (429)")

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" viewBox="0 0 500 350" width="500" height="350" shape-rendering="geometricPrecision">
+  <title>Vector illustration (traced)</title>
+  <desc>Vectorized from AI-generated source</desc>
+  <metadata>generator="ai-to-vector" version="1.0" params_hash="96a5e85c0100"</metadata>
+  <g id="layer-00-background" inkscape:groupmode="layer" inkscape:label="00-background" fill-rule="evenodd">
+    <path id="region-8" d="M246 245L232.1 246.1L217 249L217.1 255.9L217.9 258.1L218.1 264.9L219.9 275.1L220.1 281.9L220.9 284.1L221.1 290.9L222.9 301.1L223.1 307.9L223.9 310.1L224 331L105 329L109 297L87.9 301.9L82.1 302.1L79 303L62.1 302.9L48.1 300.9L35.1 297.9L13.3 290.7L0 285L0 350L500 350L500 251L495.1 251.1L491.1 252.1L438.9 268.9L421.9 272.9L408.9 274.9L377.1 274.9L343 268L349 331L235.1 328.1L235.9 325.9L236.1 320.1L236.9 317.9L237.1 312.1L237.9 309.9L238.1 304.1L238.9 301.9L239.1 296.1L239.9 293.9L240.1 288.1L246 245Z" fill="#a06432" stroke="#a06432" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-10-fill-neutral-dark" inkscape:groupmode="layer" inkscape:label="10-fill-neutral-dark" fill-rule="evenodd">
+    <path id="region-29" d="M161 176L159 170L150.1 171.1L150 173L152 176L161 176Z" fill="#281e19" stroke="#281e19" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-30" d="M181 173L179 170L170 172L170 176L180.9 174.9L181 173Z" fill="#281e19" stroke="#281e19" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-31" d="M289 186L287 180L280.1 181.1L280 183L282 186L289 186Z" fill="#231914" stroke="#231914" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-32" d="M306 183L304 180L297 182L297 186L305.9 184.9L306 183Z" fill="#231914" stroke="#231914" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-10-fill-neutral-light" inkscape:groupmode="layer" inkscape:label="10-fill-neutral-light" fill-rule="evenodd">
+    <path id="region-13" d="M500 94L0 94L0 110L500 110L500 94Z" fill="#c7bdb3" stroke="#c7bdb3" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-20" d="M309 148L297.9 145.1L294 145L288.1 145.1L277 148L267.8 156.8L266 160L265.1 163.1L265.1 167.9L267.3 173.7L271 178L278.1 182.9L280 183L280.1 181.1L287 180L289 186L297 186L297 182L304 180L306 183L309.2 182.2L315 178L318.7 173.7L320.9 167.9L320.9 163.1L320 160L318.2 156.8L309 148Z" fill="#f5f0e6" stroke="#f5f0e6" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-34" d="M500 82L0 82L0 94L500 94L500 82Z" fill="#bcbaba" stroke="#bcbaba" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-10-fill-neutral-mid" inkscape:groupmode="layer" inkscape:label="10-fill-neutral-mid" fill-rule="evenodd">
+    <path id="region-22" d="M500 75L0 75L0 82L500 82L500 75Z" fill="#b4b8bf" stroke="#b4b8bf" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-15-fill-orange-dark" inkscape:groupmode="layer" inkscape:label="15-fill-orange-dark" fill-rule="evenodd">
+    <path id="region-16" d="M280 183L278.1 182.9L271 178L270 189L271 197L273.3 202.7L277.7 208.3L278 210L308 210L308.3 208.3L310 207L313.7 200.7L315.9 192.9L316 184L315 178L309.2 182.2L306 183L305.9 184.9L297 186L289 186L282 186L280 183Z" fill="#cd8764" stroke="#cd8764" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-15-fill-orange-light" inkscape:groupmode="layer" inkscape:label="15-fill-orange-light" fill-rule="evenodd">
+    <path id="region-15" d="M142 169L140.1 174.1L140.1 181.9L143.3 191.7L149 200L182 200L187.7 191.7L190.9 181.9L190.9 174.1L189 169L181 173L180.9 174.9L170 176L161 176L152 176L150 173L142 169Z" fill="#d7916e" stroke="#d7916e" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-20-fill-purple-magenta-dark" inkscape:groupmode="layer" inkscape:label="20-fill-purple-magenta-dark" fill-rule="evenodd">
+    <path id="region-3" d="M149 200L122 200L115 245L109 297L105 329L224 331L223.9 310.1L223.1 307.9L222.9 301.1L221.1 290.9L220.9 284.1L220.1 281.9L219.9 275.1L218.1 264.9L217.9 258.1L217.1 255.9L217 249L215.1 238.9L214.9 232.1L214.1 229.9L213.9 223.1L213.1 220.9L211 201L209 200L182 200L149 200Z" fill="#2d2837" stroke="#2d2837" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-7" d="M182 138L170.9 135.1L164 135L155.1 136.1L149 138L142.8 141.8L138 147L136.8 148.8L135 154L135.1 157.9L136 160L138.3 164.7L142 169L150 173L150.1 171.1L159 170L161 176L170 176L170 172L179 170L181 173L189 169L192.7 164.7L195 160L196 155L194.9 150.1L193 147L188.2 141.8L182 138Z" fill="#1e50b4" stroke="#1e50b4" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-14" d="M500 0L0 0L0 14L500 14L500 0Z" fill="#7dabe2" stroke="#7dabe2" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-20-fill-purple-magenta-light" inkscape:groupmode="layer" inkscape:label="20-fill-purple-magenta-light" fill-rule="evenodd">
+    <path id="region-2" d="M500 31L0 31L0 46L500 46L500 31Z" fill="#95b1d3" stroke="#95b1d3" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-27" d="M500 46L0 46L0 62L500 62L500 46Z" fill="#a1b4cb" stroke="#a1b4cb" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-28" d="M500 62L0 62L0 75L500 75L500 62Z" fill="#adb6c4" stroke="#adb6c4" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-20-fill-purple-magenta-mid" inkscape:groupmode="layer" inkscape:label="20-fill-purple-magenta-mid" fill-rule="evenodd">
+    <path id="region-21" d="M500 14L0 14L0 30L500 30L500 14Z" fill="#88aedb" stroke="#88aedb" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-24" d="M500 30L0 30L0 31L500 31L500 30Z" fill="#8fafd7" stroke="#8fafd7" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-25-fill-yellow-dark" inkscape:groupmode="layer" inkscape:label="25-fill-yellow-dark" fill-rule="evenodd">
+    <path id="region-1" d="M278 210L252 210L246 245L240.1 288.1L239.9 293.9L239.1 296.1L238.9 301.9L238.1 304.1L237.9 309.9L237.1 312.1L236.9 317.9L236.1 320.1L235.9 325.9L235.1 328.1L349 331L343 268L337.9 224.1L337.1 221.9L337 216L336 212L318 210L308 210L278 210Z" fill="#be6e28" stroke="#be6e28" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-6" d="M500 160L320 160L320.9 163.1L320.9 167.9L318.7 173.7L315 178L316 184L315.9 192.9L313.7 200.7L310 207L318 210L336 212L337 216L355.1 220.9L377.1 224.9L408.9 224.9L421.9 222.9L438.9 218.9L491.1 202.1L495.1 201.1L500 201L500 160Z" fill="#e6a555" stroke="#e6a555" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-9" d="M271 197L258 195L242 195L238.9 195.9L232.1 196.1L211 201L213.1 220.9L213.9 223.1L214.1 229.9L214.9 232.1L215.1 238.9L217 249L232.1 246.1L246 245L252 210L278 210L277.7 208.3L273.3 202.7L271 197Z" fill="#c38241" stroke="#c38241" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-10" d="M500 201L495.1 201.1L491.1 202.1L438.9 218.9L421.9 222.9L408.9 224.9L377.1 224.9L355.1 220.9L337 216L337.1 221.9L337.9 224.1L343 268L377.1 274.9L408.9 274.9L421.9 272.9L438.9 268.9L491.1 252.1L495.1 251.1L500 251L500 201Z" fill="#c38241" stroke="#c38241" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-11" d="M310 207L308.3 208.3L308 210L318 210L310 207Z" fill="#c38241" stroke="#c38241" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-12" d="M115 245L101.9 248.9L87.9 251.9L82.1 252.1L79 253L63 253L48.1 250.9L35.1 247.9L13.3 240.7L0 235L0 285L13.3 290.7L35.1 297.9L48.1 300.9L62.1 302.9L79 303L82.1 302.1L87.9 301.9L109 297L115 245Z" fill="#c38241" stroke="#c38241" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-25-fill-yellow-light" inkscape:groupmode="layer" inkscape:label="25-fill-yellow-light" fill-rule="evenodd">
+    <path id="region-17" d="M138 147L133.9 145.1L128 144L0 144L0 160L136 160L135.1 157.9L135 154L136.8 148.8L138 147Z" fill="#eec69a" stroke="#eec69a" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-18" d="M277 148L273.2 144.8L203 144L193 147L194.9 150.1L196 155L195 160L266 160L267.8 156.8L277 148Z" fill="#eec69a" stroke="#eec69a" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-19" d="M500 144L315.1 144.1L313 146L311.3 146.7L309 148L318.2 156.8L320 160L500 160L500 144Z" fill="#eec69a" stroke="#eec69a" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-25" d="M149 138L147.6 135.7L146 135L143 135L141.9 134.1L137 133L0 133L0 144L128 144L133.9 145.1L138 147L142.8 141.8L149 138Z" fill="#e3c3a1" stroke="#e3c3a1" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-26" d="M500 133L194 133L187.8 134.8L185.9 135.9L182 138L188.2 141.8L193 147L203 144L273.2 144.8L277 148L288.1 145.1L294 145L297.9 145.1L309 148L311.3 146.7L313 146L315.1 144.1L500 144L500 133Z" fill="#e3c3a1" stroke="#e3c3a1" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-25-fill-yellow-mid" inkscape:groupmode="layer" inkscape:label="25-fill-yellow-mid" fill-rule="evenodd">
+    <path id="region-0" d="M500 126L0 126L0 133L137 133L141.9 134.1L143 135L146 135L147.6 135.7L149 138L155.1 136.1L164 135L170.9 135.1L182 138L185.9 135.9L187.8 134.8L194 133L500 133L500 126Z" fill="#ddc2a5" stroke="#ddc2a5" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-4" d="M136 160L0 160L0 235L13.3 240.7L35.1 247.9L48.1 250.9L63 253L79 253L82.1 252.1L87.9 251.9L101.9 248.9L115 245L122 200L149 200L143.3 191.7L140.1 181.9L140.1 174.1L142 169L138.3 164.7L136 160Z" fill="#e6a555" stroke="#e6a555" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-5" d="M266 160L195 160L192.7 164.7L189 169L190.9 174.1L190.9 181.9L187.7 191.7L182 200L209 200L211 201L232.1 196.1L238.9 195.9L242 195L258 195L271 197L270 189L271 178L267.3 173.7L265.1 167.9L265.1 163.1L266 160Z" fill="#e6a555" stroke="#e6a555" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-23" d="M500 117L0 117L0 126L500 126L500 117Z" fill="#d6c0a9" stroke="#d6c0a9" stroke-width="0.4" stroke-linejoin="round"/>
+    <path id="region-33" d="M500 110L0 110L0 117L500 117L500 110Z" fill="#d0bfad" stroke="#d0bfad" stroke-width="0.4" stroke-linejoin="round"/>
+  </g>
+</svg>
