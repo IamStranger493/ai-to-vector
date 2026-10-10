@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: vectorizer-api
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    plan: standard
+    healthCheckPath: /healthz
+    envVars:
+      - key: API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: MAX_UPLOAD_MB
+        value: "12"
+      - key: MAX_CONCURRENT_JOBS
+        value: "1"
+      - key: JOB_TTL_S
+        value: "900"
+      - key: JOB_TIMEOUT_S
+        value: "300"
