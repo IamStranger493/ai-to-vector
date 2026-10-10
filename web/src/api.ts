@@ -57,9 +57,15 @@ function corsMessage(): string {
 }
 
 function unreachableMessage(baseUrl: string, seconds: number): string {
+  if (isLocalUrl(baseUrl)) {
+    return (
+      `Cannot reach the API at ${baseUrl}. If your backend is running on Render, click Settings (⚙️) at the top right ` +
+      `and paste your Render URL (e.g. https://vectorizer-api.onrender.com).`
+    );
+  }
   return (
-    `Cannot reach the API at ${baseUrl} after ${seconds}s. Check the API URL in Settings and that the Render ` +
-    `service is running (open ${baseUrl}/healthz in a new tab, it should show {"ok":true,...}).`
+    `Cannot reach the API at ${baseUrl} after ${seconds}s. Check the API URL in Settings and ensure the Render ` +
+    `service is running (open ${baseUrl}/healthz in a new tab, it should show {"ok":true}). Render free tier instances take ~1 minute to spin up.`
   );
 }
 
@@ -73,8 +79,9 @@ export async function testHealthz(url?: string): Promise<{ ok: boolean; message:
 
 /** Wait until the API answers. Render free instances need about a minute to wake up. */
 async function waitForServer(baseUrl: string, onStatusUpdate?: (msg: string) => void): Promise<void> {
-  // API_WAKE_MAX_MS is a debug override (localStorage) used by tests
-  const maxWaitMs = Number(localStorage.getItem("API_WAKE_MAX_MS")) || 150000;
+  // API_WAKE_MAX_MS is a debug override (localStorage) used by tests.
+  // Localhost fails fast (5s) because local servers don't take 2 minutes to spin up.
+  const maxWaitMs = isLocalUrl(baseUrl) ? 5000 : (Number(localStorage.getItem("API_WAKE_MAX_MS")) || 150000);
   const pageIsLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
   const started = Date.now();
   let last: Diagnosis = "unreachable";

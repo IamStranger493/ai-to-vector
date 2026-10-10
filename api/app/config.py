@@ -8,8 +8,8 @@ class Settings(BaseSettings):
 
     API_KEY: str = Field(default="", description="Secret API key required for auth")
     ALLOWED_ORIGINS: str = Field(
-        default="http://localhost:5173",
-        description="Comma-separated list of allowed CORS origins"
+        default="*",
+        description="Comma-separated list of allowed CORS origins (* allows all)"
     )
     MAX_UPLOAD_MB: int = Field(default=12, description="Max upload size in megabytes")
     MAX_IMAGE_PIXELS: int = Field(default=50_000_000, description="Pillow max image pixels")
@@ -21,7 +21,8 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins_list(self) -> list[str]:
-        return [origin.strip().rstrip("/") for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
+        origins = [origin.strip().rstrip("/") for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
+        return origins if origins else ["*"]
 
 
 settings = Settings()
