@@ -8,6 +8,43 @@ import { progressController } from "./ui/progress";
 import { initSettingsDialog } from "./ui/settingsDialog";
 import * as fflate from "fflate";
 
+let activeObjectUrl: string | null = null;
+
+function showUploadError(msg: string | null) {
+  const banner = document.getElementById("upload-error-banner");
+  if (!banner) return;
+  if (msg) {
+    banner.textContent = msg;
+    banner.classList.remove("hidden");
+  } else {
+    banner.textContent = "";
+    banner.classList.add("hidden");
+  }
+}
+
+function handleImageFile(file: File) {
+  showUploadError(null);
+  const newUrl = URL.createObjectURL(file);
+  viewerController.setReferenceImage(
+    newUrl,
+    () => {
+      // Successful decode & load: safe to revoke previous blob URL
+      if (activeObjectUrl && activeObjectUrl.startsWith("blob:") && activeObjectUrl !== newUrl) {
+        URL.revokeObjectURL(activeObjectUrl);
+      }
+      activeObjectUrl = newUrl;
+      appState.currentImageUrl = newUrl;
+      showUploadError(null);
+    },
+    (err) => {
+      showUploadError(err);
+      try {
+        URL.revokeObjectURL(newUrl);
+      } catch (_) {}
+    }
+  );
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize UI subsystems
   viewerController.init();
@@ -41,15 +78,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Image Upload handler
   initUpload(
     (file) => {
-      const url = URL.createObjectURL(file);
-      appState.currentImageUrl = url;
-      viewerController.setReferenceImage(url);
+      handleImageFile(file);
     },
     (sampleName) => {
       loadSampleImage(sampleName);
+    },
+    (err) => {
+      showUploadError(err);
     }
   );
 
@@ -267,9 +304,7 @@ function loadSampleImage(sampleName: string) {
     if (blob) {
       const file = new File([blob], `${sampleName}.png`, { type: "image/png" });
       appState.currentImageFile = file;
-      const url = URL.createObjectURL(file);
-      appState.currentImageUrl = url;
-      viewerController.setReferenceImage(url);
+      handleImageFile(file);
     }
   });
 }

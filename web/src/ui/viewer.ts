@@ -1,4 +1,3 @@
-
 export class ViewerController {
   private scale = 1.0;
   private panX = 0;
@@ -31,30 +30,74 @@ export class ViewerController {
     document.getElementById("btn-zoom-out")?.addEventListener("click", () => this.zoom(0.8));
     document.getElementById("btn-zoom-reset")?.addEventListener("click", () => this.fitToViewport());
 
-    // Wheel zoom
+    // Wheel zoom on viewer ONLY with { passive: false }
     this.viewportEl.addEventListener("wheel", (e) => {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.15 : 0.85;
       this.zoom(factor);
     }, { passive: false });
 
-    // Pan drag
-    this.viewportEl.addEventListener("mousedown", (e) => {
+    // Pointer pan drag attached ONLY to viewportEl
+    this.viewportEl.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       this.isDragging = true;
       this.startX = e.clientX - this.panX;
       this.startY = e.clientY - this.panY;
+      try {
+        this.viewportEl.setPointerCapture(e.pointerId);
+      } catch (_) {}
     });
 
-    window.addEventListener("mousemove", (e) => {
+    this.viewportEl.addEventListener("pointermove", (e) => {
       if (!this.isDragging) return;
       this.panX = e.clientX - this.startX;
       this.panY = e.clientY - this.startY;
       this.applyTransform();
     });
 
-    window.addEventListener("mouseup", () => {
-      this.isDragging = false;
+    const stopDragging = (e: PointerEvent) => {
+      if (this.isDragging) {
+        this.isDragging = false;
+        try {
+          this.viewportEl.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+      }
+    };
+
+    this.viewportEl.addEventListener("pointerup", stopDragging);
+    this.viewportEl.addEventListener("pointercancel", stopDragging);
+
+    // Multi-touch pinch-to-zoom on viewportEl ONLY
+    let initialPinchDist = 0;
+    let initialPinchScale = 1.0;
+
+    this.viewportEl.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        initialPinchDist = Math.hypot(dx, dy);
+        initialPinchScale = this.scale;
+      }
+    }, { passive: false });
+
+    this.viewportEl.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2 && initialPinchDist > 0) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const factor = dist / initialPinchDist;
+        this.scale = Math.max(0.1, Math.min(initialPinchScale * factor, 20.0));
+        this.updateZoomText();
+        this.applyTransform();
+      }
+    }, { passive: false });
+
+    this.viewportEl.addEventListener("touchend", (e) => {
+      if (e.touches.length < 2) {
+        initialPinchDist = 0;
+      }
     });
 
     // Compare slider
@@ -72,14 +115,57 @@ export class ViewerController {
         this.viewportEl.className = `viewport bg-${bg}`;
       });
     });
+
+    // Window resize observer to refit or update boundaries
+    window.addEventListener("resize", () => {
+      if (this.refImageEl.complete && this.refImageEl.naturalWidth > 0) {
+        this.fitToViewport();
+      }
+    });
   }
 
-  public setReferenceImage(url: string) {
-    this.refImageEl.src = url;
-    this.refImageEl.style.display = "block";
+  public setReferenceImage(
+    url: string,
+    onLoadSuccess?: () => void,
+    onLoadError?: (err: string) => void
+  ) {
+    // Attach event listeners BEFORE setting .src to prevent race conditions
+    let handled = false;
+
     this.refImageEl.onload = () => {
+      if (handled) return;
+      handled = true;
+
+      const w = this.refImageEl.naturalWidth;
+      const h = this.refImageEl.naturalHeight;
+
+      if (!w || !h || isNaN(w) || isNaN(h) || w <= 0 || h <= 0) {
+        this.refImageEl.style.display = "none";
+        onLoadError?.("Image decoding failed: Natural image dimensions are zero or invalid.");
+        return;
+      }
+
+      this.refImageEl.style.display = "block";
       this.fitToViewport();
+      onLoadSuccess?.();
     };
+
+    this.refImageEl.onerror = () => {
+      if (handled) return;
+      handled = true;
+      this.refImageEl.style.display = "none";
+      onLoadError?.("Failed to decode image. Please check that the file is a valid PNG, JPEG, or WEBP image.");
+    };
+
+    this.refImageEl.src = url;
+
+    // In case the image was already cached/loaded synchronously
+    if (this.refImageEl.complete && this.refImageEl.naturalWidth > 0 && !handled) {
+      handled = true;
+      this.refImageEl.style.display = "block";
+      this.fitToViewport();
+      onLoadSuccess?.();
+    }
   }
 
   public setSvgContent(svgString: string) {
@@ -98,17 +184,37 @@ export class ViewerController {
     this.applyTransform();
   }
 
-  private fitToViewport() {
+  public fitToViewport() {
+    if (!this.viewportEl || !this.transformEl) return;
     const rect = this.viewportEl.getBoundingClientRect();
     const contentW = this.refImageEl.naturalWidth || 600;
     const contentH = this.refImageEl.naturalHeight || 400;
 
-    const scaleX = (rect.width * 0.85) / contentW;
-    const scaleY = (rect.height * 0.85) / contentH;
-    this.scale = Math.min(scaleX, scaleY, 1.5);
+    // Guard against 0 / NaN dimensions
+    if (!contentW || !contentH || isNaN(contentW) || isNaN(contentH) || contentW <= 0 || contentH <= 0) {
+      return;
+    }
 
-    this.panX = (rect.width - contentW * this.scale) / 2;
-    this.panY = (rect.height - contentH * this.scale) / 2;
+    const vpW = rect.width > 0 ? rect.width : 600;
+    const vpH = rect.height > 0 ? rect.height : 400;
+
+    const scaleX = (vpW * 0.85) / contentW;
+    const scaleY = (vpH * 0.85) / contentH;
+    let targetScale = Math.min(scaleX, scaleY, 1.5);
+
+    if (isNaN(targetScale) || !isFinite(targetScale) || targetScale <= 0) {
+      targetScale = 1.0;
+    }
+    this.scale = targetScale;
+
+    let px = (vpW - contentW * this.scale) / 2;
+    let py = (vpH - contentH * this.scale) / 2;
+
+    if (isNaN(px) || !isFinite(px)) px = 0;
+    if (isNaN(py) || !isFinite(py)) py = 0;
+
+    this.panX = Math.round(px);
+    this.panY = Math.round(py);
 
     this.transformEl.style.width = `${contentW}px`;
     this.transformEl.style.height = `${contentH}px`;
@@ -118,11 +224,15 @@ export class ViewerController {
   }
 
   private updateZoomText() {
-    this.zoomTextEl.textContent = `${Math.round(this.scale * 100)}%`;
+    if (this.zoomTextEl) {
+      this.zoomTextEl.textContent = `${Math.round(this.scale * 100)}%`;
+    }
   }
 
   private applyTransform() {
-    this.transformEl.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.scale})`;
+    if (this.transformEl) {
+      this.transformEl.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.scale})`;
+    }
   }
 }
 
