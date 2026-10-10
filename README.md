@@ -16,7 +16,7 @@ Engineered with **exact planar topological decomposition**, this tool mathematic
 
 1. **Planar Half-Edge Topology (Guaranteed Zero Gaps)**
    - Decomposes segmented regions into planar crack-edges and shared boundary arcs.
-   - Adjoining faces share identical parametric Bézier control points in forward/reverse direction, guaranteeing **zero gap pixels** ($0$ magenta pixels across $0.5\times$, $1\times$, and $2\times$ zoom levels).
+   - Adjoining faces share identical parametric Bézier control points in forward/reverse direction, which removes gaps by construction. A render-based repair loop then verifies it (0 magenta pixels at 0.5x, 1x, 2x, 3x on the benchmark image).
 2. **Schneider Cubic Bézier Curve Fitting**
    - Gaussian boundary pre-filtering, Douglas-Peucker (RDP) corner splitting, and iterative Schneider least-squares fitting.
    - Automatic polygon fallback validation ensures self-intersecting or high-residual curves are gracefully converted without distortion.
@@ -69,17 +69,21 @@ Engineered with **exact planar topological decomposition**, this tool mathematic
 
 ## Benchmarks & Quality Metrics
 
-Tested on standard high-detail benchmark test images:
+Measured on a real 1672x941 AI illustration (two people in a desert), `working_max_side=2000`, `k=48`, fills only.
+Gaps are counted by rendering the SVG over `#ff00ff` with CairoSVG and counting pure-magenta pixels.
 
-| Image | Resolution | Baseline MAE | Our MAE | Baseline PSNR | Our PSNR | Baseline SSIM | Our SSIM | Gap Pixels (0.5x, 1x, 2x) |
-|---|---|---|---|---|---|---|---|---|
-| `illustration.png` | 512×512 | 8.14 | **4.97** | 25.50 dB | **30.22 dB** | 0.920 | **0.958** | **0 / 0 / 0** |
-| `desert_scene.png` | 640×480 | 9.30 | **5.41** | 24.10 dB | **29.15 dB** | 0.895 | **0.942** | **0 / 0 / 0** |
-| `village_scene.png` | 600×600 | 10.20 | **6.12** | 23.40 dB | **28.04 dB** | 0.880 | **0.931** | **0 / 0 / 0** |
+| Curve mode | Gap pixels (0.5x / 1x / 2x / 3x) | MAE | PSNR | SSIM | Paths | SVG size |
+|---|---|---|---|---|---|---|
+| `polygon` | 0 / 0 / 0 / 0 | 6.2 | 29.0 dB | 0.84 | 9,009 | 2.2 MB |
+| `bezier` (with gap repair) | 0 / 0 / 0 / 0 | 6.3 | 29.0 dB | 0.82 | 9,009 | 3.5 MB |
 
-*All runs strictly achieve `0` magenta gap pixels across all scales.* Complete benchmark logs and methodology are documented in [`docs/BENCHMARKS.md`](file:///e:/Z/Coding/ai-to-vector/docs/BENCHMARKS.md).
-
----
+Notes:
+- In `bezier` mode, fitted curves can leave hairline gaps. The pipeline renders the fills at 1x/2x/3x, maps each gap back to its
+  regions, forces the shared arcs there to exact polygon geometry, and repeats (last resort: all arcs polygon).
+  Without this step the same image shows ~10 gap pixels at 1x and ~340 at 2x. Tests: `tests/test_gap_repair.py`.
+- Gaps can still appear at much higher zoom than the repaired scales (4x showed ~70 px of 45 M). Set `GAP_REPAIR_SCALES=1,2,3,4` for stricter output (slower, more memory).
+- Timings depend on hardware. On a 4 GB / 2-vCPU sandbox: polygon about 40-70 s, bezier about 100-140 s for this image. Keep `JOB_TIMEOUT_S` above your measured time.
+- The earlier synthetic 512x512 test images are only used for unit/regression tests, not for quality claims.
 
 ## Local Setup & Quickstart
 
@@ -180,12 +184,13 @@ curl http://localhost:10000/healthz
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `API_KEY` | *(empty / none)* | Optional auth token. When set, all job operations require `X-API-Key` header. |
-| `ALLOWED_ORIGINS` | `*` | Comma-separated CORS allowed origins. |
+| `API_KEY` | *(empty / none)* | Auth token. **Always set it on a public deployment**; when empty there is no authentication. |
+| `ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated CORS allowed origins. Set to your Vercel domain in production. |
 | `MAX_UPLOAD_MB` | `12` | Maximum file upload size in MB. |
 | `MAX_CONCURRENT_JOBS`| `1` | Max concurrent background worker threads/processes. |
 | `JOB_TTL_S` | `900` | Completed job retention before disk garbage collection (seconds). |
-| `JOB_TIMEOUT_S` | `300` | Pipeline execution timeout per job (seconds). |
+| `JOB_TIMEOUT_S` | `300` | Pipeline execution timeout per job (seconds). Large images in bezier mode can take longer on small instances. |
+| `GAP_REPAIR_SCALES` | `1,2,3` | Render scales used to find and repair hairline gaps in bezier mode. |
 
 ---
 

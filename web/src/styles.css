@@ -728,3 +728,24 @@ body {
   }
   .hide-mobile { display: none; }
 }
+
+/* ---- Layout fixes ---- */
+.app-workspace { grid-template-rows: minmax(0, 1fr); }
+#params-container { overflow-y: visible; max-height: none; }
+#viewer-stage { scroll-margin-top: 72px; }
+
+@media (max-width: 960px) {
+  body, .app-layout { width: 100%; }
+  .app-header {
+    position: sticky;
+    top: 0;
+    height: auto;
+    min-height: 60px;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+  .header-actions { flex-wrap: wrap; gap: 0.4rem; width: 100%; justify-content: flex-end; }
+  .preset-control { flex: 1 1 140px; min-width: 0; }
+  .preset-control .styled-select { width: 100%; }
+}

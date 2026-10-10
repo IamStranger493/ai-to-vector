@@ -157,6 +157,8 @@ function bindControls(onChange: () => void) {
     const input = document.getElementById(id) as HTMLInputElement;
     const badge = document.getElementById(valId) as HTMLElement;
     if (!input || !badge) return;
+    // Show the real current value immediately (presets change slider values, labels were hard-coded)
+    badge.textContent = transform(parseFloat(input.value));
     input.addEventListener("input", () => {
       const num = parseFloat(input.value);
       badge.textContent = transform(num);

@@ -62,6 +62,7 @@ def run_qa(
     arcs_count: int,
     bezier_fallbacks: int = 0,
     invalid_rings_repaired: int = 0,
+    gap_repair: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Executes mandatory QA checks:
@@ -74,11 +75,14 @@ def run_qa(
     # 1. Zero gaps test across 0.5x, 1x, 2x scales
     gaps_by_scale = {}
     first_gap_locations = []
+    fills_1x_png = None
 
     for scale in (0.5, 1.0, 2.0):
         png_fills = render_svg_to_png(fills_only_svg_str, scale=scale, background_color="#ff00ff")
         count, coords = count_magenta_pixels(png_fills)
         gaps_by_scale[f"{scale}x"] = count
+        if scale == 1.0:
+            fills_1x_png = png_fills
         if count > 0 and not first_gap_locations:
             first_gap_locations = coords
 
@@ -110,17 +114,39 @@ def run_qa(
     raw_ssim = float(structural_similarity(original_rgb, comp_rendered, channel_axis=2))
     ssim = 1.0 if math.isnan(raw_ssim) else raw_ssim
 
+    # Fidelity of the fills alone (lines add dark pixels and should not count as color error)
+    fills_mae = fills_psnr = fills_ssim = None
+    if fills_1x_png is not None:
+        with Image.open(io.BytesIO(fills_1x_png)) as img:
+            fills_rgb = np.array(img.convert("RGB"), dtype=np.uint8)
+        if fills_rgb.shape[:2] != (h_orig, w_orig):
+            fills_rgb = np.array(
+                Image.fromarray(fills_rgb).resize((w_orig, h_orig), Image.Resampling.BILINEAR), dtype=np.uint8
+            )
+        fills_mae = float(np.mean(np.abs(original_rgb.astype(np.float32) - fills_rgb.astype(np.float32))))
+        p = float(peak_signal_noise_ratio(original_rgb, fills_rgb))
+        fills_psnr = 100.0 if (math.isinf(p) or math.isnan(p)) else p
+        s = float(structural_similarity(original_rgb, fills_rgb, channel_axis=2))
+        fills_ssim = 1.0 if math.isnan(s) else s
+
     # Path and node counts in full SVG
     path_count = full_svg_str.count("<path")
     node_count = sum(full_svg_str.count(cmd) for cmd in ("M", "L", "C", "Z", "m", "l", "c", "z"))
     svg_size_bytes = len(full_svg_str.encode("utf-8"))
 
     report = {
+        # Primary metrics = fills only (the color/shape fidelity). Lines are an artistic layer on top.
         "metrics": {
+            "mae": round(fills_mae if fills_mae is not None else mae, 2),
+            "psnr": round(fills_psnr if fills_psnr is not None else psnr, 2),
+            "ssim": round(fills_ssim if fills_ssim is not None else ssim, 4),
+        },
+        "metrics_with_lines": {
             "mae": round(mae, 2),
             "psnr": round(psnr, 2),
             "ssim": round(ssim, 4),
         },
+        "gap_repair": gap_repair,
         "gaps": {
             "counts": gaps_by_scale,
             "total": total_gaps,

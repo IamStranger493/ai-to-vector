@@ -345,66 +345,93 @@ def validate_and_repair_regions(
 ) -> tuple[int, int]:
     """
     Mandatory validation per spec: Checks each region polygon area against raster area.
-    If area error > 2%, falls back region's shared arcs to polygon mode and repairs.
+    If a ring is invalid (self-intersecting), the union cannot be built, or the area error
+    is > 2%, all shared arcs of that region fall back to polygon mode (exact lattice geometry).
+    Because arcs are shared, neighbors switch consistently. Repeats (max 4 passes) because
+    switching an arc can change how a neighbor region validates.
     Returns:
         (bezier_fallbacks_count, invalid_rings_repaired)
     """
+    from shapely.errors import GEOSException
+
     bezier_fallbacks = 0
     invalid_repaired = 0
 
     if params.mode != "bezier":
         return 0, 0
 
-    for r_id, rings in topo.region_rings.items():
-        if not rings:
-            continue
+    for _pass in range(4):
+        changed = False
 
-        raster_area = float(region_areas[r_id])
-        # Sample Bezier curve points to build shapely Polygon
-        sample_polys = []
-        for ring in rings:
-            sampled_pts = []
-            for dref in ring:
-                data = arc_data[dref.arc_id]
-                if data.is_polygon or not data.bezier_segments:
-                    pts = data.poly_points[::-1] if dref.reversed else data.poly_points
-                    sampled_pts.extend(pts[1:] if sampled_pts else pts)
-                else:
-                    segs = data.bezier_segments
-                    curr_segs = [(p3, c2, c1, p0) for p0, c1, c2, p3 in reversed(segs)] if dref.reversed else segs
-                    for p0, c1, c2, p3 in curr_segs:
-                        # Sample 8 points along Bezier
-                        ts = np.linspace(0, 1, 8)
-                        b_pts = eval_bezier(p0, c1, c2, p3, ts)
-                        sampled_pts.extend(b_pts[1:] if sampled_pts else b_pts)
+        for r_id, rings in topo.region_rings.items():
+            if not rings:
+                continue
 
-            if len(sampled_pts) >= 4:
-                sample_polys.append(Polygon(sampled_pts))
+            # Skip regions whose arcs are already all polygons (exact by construction)
+            if all(arc_data[d.arc_id].is_polygon or not arc_data[d.arc_id].bezier_segments
+                   for ring in rings for d in ring):
+                continue
 
-        if not sample_polys:
-            continue
-
-        sample_polys.sort(key=lambda p: p.area, reverse=True)
-        geom = sample_polys[0]
-        for p in sample_polys[1:]:
-            geom = geom.symmetric_difference(p)
-
-        poly_area = float(geom.area)
-        is_valid = geom.is_valid
-
-        # Tolerance checks: error < 2% or < 3px for small regions
-        area_error = abs(poly_area - raster_area)
-        rel_error = area_error / max(1.0, raster_area)
-
-        fails = (not is_valid) or (rel_error >= 0.02 and area_error >= 3.0)
-
-        if fails:
-            # Fall back ALL arcs of this region to polygon mode!
-            bezier_fallbacks += 1
-            if not is_valid:
-                invalid_repaired += 1
+            raster_area = float(region_areas[r_id])
+            # Sample Bezier curve points to build shapely Polygon
+            sample_polys = []
             for ring in rings:
+                sampled_pts = []
                 for dref in ring:
-                    arc_data[dref.arc_id].is_polygon = True
+                    data = arc_data[dref.arc_id]
+                    if data.is_polygon or not data.bezier_segments:
+                        pts = data.poly_points[::-1] if dref.reversed else data.poly_points
+                        sampled_pts.extend(pts[1:] if sampled_pts else pts)
+                    else:
+                        segs = data.bezier_segments
+                        curr_segs = [(p3, c2, c1, p0) for p0, c1, c2, p3 in reversed(segs)] if dref.reversed else segs
+                        for p0, c1, c2, p3 in curr_segs:
+                            # Sample 8 points along Bezier
+                            ts = np.linspace(0, 1, 8)
+                            b_pts = eval_bezier(p0, c1, c2, p3, ts)
+                            sampled_pts.extend(b_pts[1:] if sampled_pts else b_pts)
+
+                if len(sampled_pts) >= 4:
+                    sample_polys.append(Polygon(sampled_pts))
+
+            if not sample_polys:
+                continue
+
+            is_valid = True
+            poly_area = 0.0
+            try:
+                # A self-intersecting ring makes the boolean ops below throw: treat as invalid
+                if any(not p.is_valid for p in sample_polys):
+                    is_valid = False
+                else:
+                    sample_polys.sort(key=lambda p: p.area, reverse=True)
+                    geom = sample_polys[0]
+                    for p in sample_polys[1:]:
+                        geom = geom.symmetric_difference(p)
+                    poly_area = float(geom.area)
+                    is_valid = bool(geom.is_valid)
+            except GEOSException:
+                is_valid = False
+
+            if is_valid:
+                # Tolerance checks: error < 2% or < 3px for small regions
+                area_error = abs(poly_area - raster_area)
+                rel_error = area_error / max(1.0, raster_area)
+                fails = rel_error >= 0.02 and area_error >= 3.0
+            else:
+                fails = True
+
+            if fails:
+                # Fall back ALL arcs of this region to polygon mode!
+                bezier_fallbacks += 1
+                if not is_valid:
+                    invalid_repaired += 1
+                for ring in rings:
+                    for dref in ring:
+                        arc_data[dref.arc_id].is_polygon = True
+                changed = True
+
+        if not changed:
+            break
 
     return bezier_fallbacks, invalid_repaired

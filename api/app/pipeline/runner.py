@@ -17,6 +17,7 @@ from app.pipeline.lines_contour import generate_contour_lines
 from app.pipeline.lines_detail import generate_detail_lines
 from app.pipeline.svg_writer import write_svg
 from app.pipeline.qa import run_qa
+from app.pipeline.gap_repair import repair_gaps
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,32 @@ def run_pipeline(
     )
     timings["layers"] = time.time() - t0
 
+    # --- 7b. Gap repair (bezier mode only): never ship hairline gaps ---
+    gap_repair_info = None
+    if params.curves.mode == "bezier":
+        t0 = time.time()
+        report_stage("gap_repair", 0.77)
+        gap_repair_info = repair_gaps(
+            topo=topo,
+            arc_data=arc_data,
+            final_labels=final_labels,
+            build_fills_svg=lambda: write_svg(
+                topo=topo,
+                arc_data=arc_data,
+                region_colors_rgb=region_colors,
+                region_layers=region_layers,
+                contour_strokes=[],
+                detail_paths=[],
+                orig_w=loaded.orig_width,
+                orig_h=loaded.orig_height,
+                params=params,
+                fills_only=True,
+            ),
+            orig_w=loaded.orig_width,
+            orig_h=loaded.orig_height,
+        )
+        timings["gap_repair"] = time.time() - t0
+
     # --- 8. Contour Lines ---
     t0 = time.time()
     report_stage("contour_lines", 0.80)
@@ -189,6 +216,7 @@ def run_pipeline(
         arcs_count=len(topo.arcs),
         bezier_fallbacks=fallbacks,
         invalid_rings_repaired=repairs,
+        gap_repair=gap_repair_info,
     )
     timings["qa"] = time.time() - t0
     report_stage("done", 1.0)

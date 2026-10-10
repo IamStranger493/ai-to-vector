@@ -10,6 +10,13 @@ import * as fflate from "fflate";
 
 let activeObjectUrl: string | null = null;
 
+function scrollViewerIntoViewOnMobile() {
+  // On narrow screens the viewer sits below the long parameter list; bring it into view.
+  if (window.matchMedia("(max-width: 960px)").matches) {
+    document.getElementById("viewer-stage")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 function showUploadError(msg: string | null) {
   const banner = document.getElementById("upload-error-banner");
   if (!banner) return;
@@ -35,6 +42,7 @@ function handleImageFile(file: File) {
       activeObjectUrl = newUrl;
       appState.currentImageUrl = newUrl;
       showUploadError(null);
+      scrollViewerIntoViewOnMobile();
     },
     (err) => {
       showUploadError(err);
@@ -46,6 +54,11 @@ function handleImageFile(file: File) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // The preset dropdown shows "Accurate" first, so make the real params match it
+  appState.loadPreset("Accurate");
+  const initialPresetSelect = document.getElementById("preset-select") as HTMLSelectElement | null;
+  if (initialPresetSelect) initialPresetSelect.value = "Accurate";
+
   // Initialize UI subsystems
   viewerController.init();
   layersPanelController.init();
@@ -137,6 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
       enableDownloads(jobId, svgStr, report);
 
       progressController.hide();
+      scrollViewerIntoViewOnMobile();
     } catch (err: any) {
       progressController.hide();
       alert(`Vectorization failed: ${err.message}`);
