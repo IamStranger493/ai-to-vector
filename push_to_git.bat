@@ -33,13 +33,15 @@ echo [NOTICE] No remote repository (origin) is configured yet.
 echo.
 echo Please enter your GitHub / Git Repository URL:
 echo (Example: https://github.com/your-username/ai-to-vector.git)
+set "REPO_URL="
 set /p REPO_URL="Repository URL: "
-if "%REPO_URL%"=="" (
+if "!REPO_URL!"=="" (
+    echo.
     echo [ERROR] Repository URL cannot be empty.
     goto :pause_end
 )
-git remote add origin %REPO_URL%
-echo [SUCCESS] Remote origin added: %REPO_URL%
+git remote add origin !REPO_URL!
+echo [SUCCESS] Remote origin added: !REPO_URL!
 echo.
 goto :stage_files
 
