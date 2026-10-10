@@ -3,7 +3,7 @@ import os
 import time
 import uuid
 import logging
-from concurrent.futures import ProcessPoolExecutor, Future
+from concurrent.futures import ThreadPoolExecutor, Future
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
@@ -50,14 +50,14 @@ class JobManager:
     def __init__(self):
         self.jobs: Dict[str, Job] = {}
         self.queue: list[str] = []
-        self.executor: Optional[ProcessPoolExecutor] = None
+        self.executor: Optional[ThreadPoolExecutor] = None
         self.lock = asyncio.Lock()
         self._cleanup_task: Optional[asyncio.Task] = None
         self._dispatch_task: Optional[asyncio.Task] = None
 
     def start(self):
         if self._dispatch_task is None or self._dispatch_task.done():
-            self.executor = ProcessPoolExecutor(max_workers=settings.MAX_CONCURRENT_JOBS)
+            self.executor = ThreadPoolExecutor(max_workers=settings.MAX_CONCURRENT_JOBS)
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
             self._dispatch_task = asyncio.create_task(self._dispatch_loop())
 
@@ -109,13 +109,22 @@ class JobManager:
                             job.stage = "load"
                             job.updated_at = time.time()
                             loop = asyncio.get_running_loop()
-                            # Run worker in ProcessPoolExecutor
+
+                            def make_progress_cb(target_job: Job):
+                                def cb(stage_name: str, prog_val: float):
+                                    target_job.stage = stage_name
+                                    target_job.progress = prog_val
+                                    target_job.updated_at = time.time()
+                                return cb
+
+                            # Run worker in ThreadPoolExecutor with progress callback
                             future = loop.run_in_executor(
                                 self.executor,
                                 run_pipeline_task,
                                 job.id,
                                 job.image_bytes,
                                 job.params.model_dump(),
+                                make_progress_cb(job),
                             )
                             asyncio.create_task(self._monitor_job(job, future))
             except asyncio.CancelledError:

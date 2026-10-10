@@ -4,8 +4,8 @@ from typing import Callable, Optional, Dict, Any
 logger = logging.getLogger(__name__)
 
 
-def run_pipeline_task(job_id: str, image_bytes: bytes, params_dict: dict) -> dict:
-    """Entry point for running the vectorizer pipeline in a worker process."""
+def run_pipeline_task(job_id: str, image_bytes: bytes, params_dict: dict, progress_callback=None) -> dict:
+    """Entry point for running the vectorizer pipeline in a worker thread/process."""
     from app.pipeline.runner import run_pipeline
 
-    return run_pipeline(job_id, image_bytes, params_dict)
+    return run_pipeline(job_id, image_bytes, params_dict, progress_callback=progress_callback)
