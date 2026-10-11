@@ -63,17 +63,19 @@ document.addEventListener("DOMContentLoaded", () => {
   progressController.init();
   initSettingsDialog();
 
-  initParamsPanel(() => {
+  const liveOnChange = () => {
     const presetSelect = document.getElementById("preset-select") as HTMLSelectElement;
     if (presetSelect) presetSelect.value = "custom";
     viewerController.updateLiveSvg(appState.params);
-  });
+  };
+
+  initParamsPanel(liveOnChange);
 
   // Preset Selector
   const presetSelect = document.getElementById("preset-select") as HTMLSelectElement;
   presetSelect.addEventListener("change", () => {
     appState.loadPreset(presetSelect.value);
-    initParamsPanel(() => {});
+    initParamsPanel(liveOnChange);
     viewerController.updateLiveSvg(appState.params);
   });
 

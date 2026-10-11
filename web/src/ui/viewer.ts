@@ -180,10 +180,17 @@ export class ViewerController {
 
   public updateLiveSvg(params: import("../state").PipelineParams) {
     const svgEl = this.svgHostEl?.querySelector("svg");
-    if (!svgEl) return;
+    if (!svgEl) {
+      console.debug("[LiveSVG] No SVG element in viewer – skipping live update");
+      return;
+    }
 
-    // 1. Contour Lines Layer
-    const contourLayer = this.svgHostEl.querySelector("#layer-90-lines-contour") as SVGElement | null;
+    // 1. Contour Lines Layer – try exact ID, then fallback to partial match
+    let contourLayer = this.svgHostEl.querySelector("#layer-90-lines-contour") as SVGElement | null;
+    if (!contourLayer) {
+      contourLayer = this.svgHostEl.querySelector("g[id*='contour']") as SVGElement | null;
+    }
+
     if (contourLayer) {
       contourLayer.style.display = params.contour_lines.enabled ? "inline" : "none";
       if (params.contour_lines.enabled) {
@@ -201,11 +208,18 @@ export class ViewerController {
           const scaleFactor = params.contour_lines.width_max / 3.0;
           p.setAttribute("stroke-width", `${Math.max(0.2, (base * scaleFactor)).toFixed(2)}`);
         });
+        console.debug(`[LiveSVG] Updated ${paths.length} contour paths`);
       }
+    } else {
+      console.debug("[LiveSVG] Contour layer not found in SVG DOM");
     }
 
-    // 2. Detail Inking Layer
-    const detailLayer = this.svgHostEl.querySelector("#layer-95-lines-detail") as SVGElement | null;
+    // 2. Detail Inking Layer – try exact ID, then fallback to partial match
+    let detailLayer = this.svgHostEl.querySelector("#layer-95-lines-detail") as SVGElement | null;
+    if (!detailLayer) {
+      detailLayer = this.svgHostEl.querySelector("g[id*='detail']") as SVGElement | null;
+    }
+
     if (detailLayer) {
       detailLayer.style.display = params.detail_lines.enabled ? "inline" : "none";
       if (params.detail_lines.enabled) {
@@ -222,7 +236,10 @@ export class ViewerController {
             p.setAttribute("stroke-width", `${Math.max(0.2, scaled).toFixed(2)}`);
           }
         });
+        console.debug(`[LiveSVG] Updated ${paths.length} detail paths`);
       }
+    } else {
+      console.debug("[LiveSVG] Detail layer not found in SVG DOM");
     }
   }
 
