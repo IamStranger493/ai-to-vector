@@ -142,27 +142,20 @@
         </div>
       </section>
 
-      <!-- Right Panel: Layers & Output -->
+      <!-- Right Panel: Output & Export -->
       <aside class="sidebar sidebar-right" id="sidebar-output">
         <div class="sidebar-scrollable">
-          <!-- Layer Panel -->
-          <section class="panel-section" id="section-layers">
-            <div class="section-header-row">
-              <h2 class="section-title">Layers</h2>
-              <button id="btn-show-all-layers" class="btn-text">Show All</button>
-            </div>
-            <div id="layers-list" class="layers-list">
-              <p class="empty-hint">Vectorize an image to explore its layers.</p>
-            </div>
-          </section>
-
           <!-- Export & Downloads -->
           <section class="panel-section" id="section-downloads">
-            <h2 class="section-title">Export</h2>
+            <h2 class="section-title">Export Options</h2>
             <div class="download-grid">
-              <button id="btn-dl-svg" class="btn btn-secondary btn-full" disabled>
+              <button id="btn-dl-layered-svg" class="btn btn-primary btn-full" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                <span>Download Layered SVG</span>
+              </button>
+              <button id="btn-dl-flat-svg" class="btn btn-secondary btn-full" disabled>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                <span>Download SVG</span>
+                <span>Download Flat SVG</span>
               </button>
               <button id="btn-dl-png" class="btn btn-secondary btn-full" disabled>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -171,10 +164,6 @@
               <button id="btn-dl-zip" class="btn btn-secondary btn-full" disabled>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
                 <span>Export Layers (ZIP)</span>
-              </button>
-              <button id="btn-dl-report" class="btn btn-secondary btn-full" disabled>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span>Report JSON</span>
               </button>
             </div>
           </section>

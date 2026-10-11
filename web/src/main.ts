@@ -3,7 +3,6 @@ import { submitJob, pollJob, fetchJobSvg, fetchJobPngBlob, fetchJobReport } from
 import { initUpload } from "./ui/upload";
 import { initParamsPanel } from "./ui/paramsPanel";
 import { viewerController } from "./ui/viewer";
-import { layersPanelController } from "./ui/layersPanel";
 import { progressController } from "./ui/progress";
 import { initSettingsDialog } from "./ui/settingsDialog";
 import * as fflate from "fflate";
@@ -61,7 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize UI subsystems
   viewerController.init();
-  layersPanelController.init();
   progressController.init();
   initSettingsDialog();
 
@@ -139,10 +137,6 @@ document.addEventListener("DOMContentLoaded", () => {
       // Inline SVG into DOM
       viewerController.setSvgContent(svgStr);
 
-      // Update Layers Panel
-      const svgHost = document.getElementById("svg-host") as HTMLElement;
-      layersPanelController.updateFromSvg(svgHost);
-
       // Enable download buttons
       enableDownloads(jobId, svgStr, report);
 
@@ -157,31 +151,75 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-function enableDownloads(jobId: string, svgStr: string, report: any) {
-  const btnSvg = document.getElementById("btn-dl-svg") as HTMLButtonElement;
-  const btnPng = document.getElementById("btn-dl-png") as HTMLButtonElement;
-  const btnZip = document.getElementById("btn-dl-zip") as HTMLButtonElement;
-  const btnRep = document.getElementById("btn-dl-report") as HTMLButtonElement;
+function toFlatSvg(svgStr: string): string {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgStr, "image/svg+xml");
+  const svgRoot = doc.querySelector("svg");
+  if (!svgRoot) return svgStr;
 
-  btnSvg.disabled = false;
-  btnPng.disabled = false;
-  btnZip.disabled = false;
-  btnRep.disabled = false;
+  // Remove inkscape namespace
+  svgRoot.removeAttribute("xmlns:inkscape");
 
-  btnSvg.onclick = () => downloadFile("vector_illustration.svg", svgStr, "image/svg+xml");
-  btnRep.onclick = () => downloadFile("report.json", JSON.stringify(report, null, 2), "application/json");
+  // Collect all layer groups
+  const layerGroups = Array.from(svgRoot.querySelectorAll("g[id^='layer-']"));
 
-  btnPng.onclick = async () => {
-    const blob = await fetchJobPngBlob(jobId);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "vector_preview.png";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  layerGroups.forEach((group) => {
+    // Unpack all child elements directly into svg root
+    while (group.firstChild) {
+      const child = group.firstChild;
+      if (child.nodeType === Node.ELEMENT_NODE) {
+        const el = child as Element;
+        // Clean inkscape attributes
+        Array.from(el.attributes).forEach((attr) => {
+          if (attr.name.startsWith("inkscape:")) {
+            el.removeAttribute(attr.name);
+          }
+        });
+      }
+      svgRoot.insertBefore(child, group);
+    }
+    group.remove();
+  });
 
-  btnZip.onclick = () => exportLayersZip(svgStr);
+  return new XMLSerializer().serializeToString(doc);
+}
+
+function enableDownloads(jobId: string, svgStr: string, _report: any) {
+  const btnLayeredSvg = document.getElementById("btn-dl-layered-svg") as HTMLButtonElement | null;
+  const btnFlatSvg = document.getElementById("btn-dl-flat-svg") as HTMLButtonElement | null;
+  const btnPng = document.getElementById("btn-dl-png") as HTMLButtonElement | null;
+  const btnZip = document.getElementById("btn-dl-zip") as HTMLButtonElement | null;
+
+  if (btnLayeredSvg) {
+    btnLayeredSvg.disabled = false;
+    btnLayeredSvg.onclick = () => downloadFile("vector_layered.svg", svgStr, "image/svg+xml");
+  }
+
+  if (btnFlatSvg) {
+    btnFlatSvg.disabled = false;
+    btnFlatSvg.onclick = () => {
+      const flatSvg = toFlatSvg(svgStr);
+      downloadFile("vector_flat.svg", flatSvg, "image/svg+xml");
+    };
+  }
+
+  if (btnPng) {
+    btnPng.disabled = false;
+    btnPng.onclick = async () => {
+      const blob = await fetchJobPngBlob(jobId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "vector_preview.png";
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+  }
+
+  if (btnZip) {
+    btnZip.disabled = false;
+    btnZip.onclick = () => exportLayersZip(svgStr);
+  }
 }
 
 function exportLayersZip(svgStr: string) {
