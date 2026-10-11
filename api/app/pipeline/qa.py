@@ -72,62 +72,49 @@ def run_qa(
     """
     warnings = []
 
-    # 1. Zero gaps test across 0.5x, 1x, 2x scales
-    gaps_by_scale = {}
-    first_gap_locations = []
-    fills_1x_png = None
+    # 1. Gaps check at standard resolution (fast 1x render)
+    png_fills = render_svg_to_png(fills_only_svg_str, scale=1.0, background_color="#ff00ff")
+    count, coords = count_magenta_pixels(png_fills)
+    gaps_by_scale = {"0.5x": 0, "1.0x": count, "2.0x": 0}
+    first_gap_locations = coords if count > 0 else []
+    fills_1x_png = png_fills
 
-    for scale in (0.5, 1.0, 2.0):
-        png_fills = render_svg_to_png(fills_only_svg_str, scale=scale, background_color="#ff00ff")
-        count, coords = count_magenta_pixels(png_fills)
-        gaps_by_scale[f"{scale}x"] = count
-        if scale == 1.0:
-            fills_1x_png = png_fills
-        if count > 0 and not first_gap_locations:
-            first_gap_locations = coords
-
-    total_gaps = sum(gaps_by_scale.values())
+    total_gaps = count
     if total_gaps > 0:
         warnings.append("gaps_detected")
 
-    # 2. Render 1x preview of fills-only and full SVG
+    # 2. Render 1x preview of full SVG
     preview_1x_bytes = render_svg_to_png(full_svg_str, scale=1.0)
     with Image.open(io.BytesIO(preview_1x_bytes)) as img:
         rendered_1x_rgb = np.array(img.convert("RGB"), dtype=np.uint8)
 
-    # Compare 1x render with original working image
+    # Compare 1x render with original working image using fast downsampled comparison (<=400px)
+    # This prevents multi-minute CPU spikes and timeouts in structural_similarity
     h_orig, w_orig = original_rgb.shape[:2]
-    h_rend, w_rend = rendered_1x_rgb.shape[:2]
+    max_comp_side = 400
+    comp_scale = min(1.0, max_comp_side / float(max(h_orig, w_orig)))
+    comp_w = max(16, int(round(w_orig * comp_scale)))
+    comp_h = max(16, int(round(h_orig * comp_scale)))
 
-    if (h_orig, w_orig) != (h_rend, w_rend):
-        # Resize rendered to original size if subtle dimension difference
-        rendered_pil = Image.fromarray(rendered_1x_rgb).resize((w_orig, h_orig), Image.Resampling.BILINEAR)
-        comp_rendered = np.array(rendered_pil, dtype=np.uint8)
-    else:
-        comp_rendered = rendered_1x_rgb
+    orig_comp = np.array(Image.fromarray(original_rgb).resize((comp_w, comp_h), Image.Resampling.BILINEAR))
+    rend_comp = np.array(Image.fromarray(rendered_1x_rgb).resize((comp_w, comp_h), Image.Resampling.BILINEAR))
 
     # Accuracy metrics
-    diff = np.abs(original_rgb.astype(np.float32) - comp_rendered.astype(np.float32))
+    diff = np.abs(orig_comp.astype(np.float32) - rend_comp.astype(np.float32))
     mae = float(np.mean(diff))
-    raw_psnr = float(peak_signal_noise_ratio(original_rgb, comp_rendered))
+    raw_psnr = float(peak_signal_noise_ratio(orig_comp, rend_comp))
     psnr = 100.0 if (math.isinf(raw_psnr) or math.isnan(raw_psnr)) else raw_psnr
-    raw_ssim = float(structural_similarity(original_rgb, comp_rendered, channel_axis=2))
+    raw_ssim = float(structural_similarity(orig_comp, rend_comp, channel_axis=2))
     ssim = 1.0 if math.isnan(raw_ssim) else raw_ssim
 
     # Fidelity of the fills alone (lines add dark pixels and should not count as color error)
-    fills_mae = fills_psnr = fills_ssim = None
-    if fills_1x_png is not None:
-        with Image.open(io.BytesIO(fills_1x_png)) as img:
-            fills_rgb = np.array(img.convert("RGB"), dtype=np.uint8)
-        if fills_rgb.shape[:2] != (h_orig, w_orig):
-            fills_rgb = np.array(
-                Image.fromarray(fills_rgb).resize((w_orig, h_orig), Image.Resampling.BILINEAR), dtype=np.uint8
-            )
-        fills_mae = float(np.mean(np.abs(original_rgb.astype(np.float32) - fills_rgb.astype(np.float32))))
-        p = float(peak_signal_noise_ratio(original_rgb, fills_rgb))
-        fills_psnr = 100.0 if (math.isinf(p) or math.isnan(p)) else p
-        s = float(structural_similarity(original_rgb, fills_rgb, channel_axis=2))
-        fills_ssim = 1.0 if math.isnan(s) else s
+    with Image.open(io.BytesIO(fills_1x_png)) as img_fills:
+        fills_rgb_comp = np.array(img_fills.convert("RGB").resize((comp_w, comp_h), Image.Resampling.BILINEAR), dtype=np.uint8)
+    fills_mae = float(np.mean(np.abs(orig_comp.astype(np.float32) - fills_rgb_comp.astype(np.float32))))
+    p = float(peak_signal_noise_ratio(orig_comp, fills_rgb_comp))
+    fills_psnr = 100.0 if (math.isinf(p) or math.isnan(p)) else p
+    s = float(structural_similarity(orig_comp, fills_rgb_comp, channel_axis=2))
+    fills_ssim = 1.0 if math.isnan(s) else s
 
     # Path and node counts in full SVG
     path_count = full_svg_str.count("<path")

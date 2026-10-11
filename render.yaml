@@ -18,4 +18,4 @@ services:
       - key: JOB_TTL_S
         value: "900"
       - key: JOB_TIMEOUT_S
-        value: "300"
+        value: "600"

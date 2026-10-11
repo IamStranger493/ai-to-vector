@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 import os
 
-# Render scales checked/repaired. Add 3 for stricter zoom-in guarantees (slower, more memory).
-REPAIR_SCALES = tuple(float(v) for v in os.environ.get("GAP_REPAIR_SCALES", "1,2,3").split(",") if v.strip())
-RADIUS_SCHEDULE = (2, 5, 10)
+# Render scales checked/repaired. Default 1 for speed and stability on cloud servers.
+REPAIR_SCALES = tuple(float(v) for v in os.environ.get("GAP_REPAIR_SCALES", "1").split(",") if v.strip())
+RADIUS_SCHEDULE = (3, 8)
 MAX_GAP_POINTS = 5000
 
 

@@ -56,14 +56,29 @@ class JobManager:
         self._dispatch_task: Optional[asyncio.Task] = None
 
     def start(self):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        need_start = False
         if self._dispatch_task is None or self._dispatch_task.done():
-            self.executor = ThreadPoolExecutor(max_workers=settings.MAX_CONCURRENT_JOBS)
+            need_start = True
+        elif loop is not None:
+            try:
+                if self._dispatch_task.get_loop() is not loop:
+                    need_start = True
+            except Exception:
+                need_start = True
+
+        if need_start:
+            if self.executor is None:
+                self.executor = ThreadPoolExecutor(max_workers=settings.MAX_CONCURRENT_JOBS)
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
             self._dispatch_task = asyncio.create_task(self._dispatch_loop())
 
     def ensure_started(self):
-        if self._dispatch_task is None or self._dispatch_task.done():
-            self.start()
+        self.start()
 
     def shutdown(self):
         if self._cleanup_task:

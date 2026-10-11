@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     MAX_IMAGE_PIXELS: int = Field(default=50_000_000, description="Pillow max image pixels")
     MAX_CONCURRENT_JOBS: int = Field(default=1, description="Max concurrent processing jobs")
     QUEUE_LENGTH_CAP: int = Field(default=3, description="Max queued jobs before 429")
-    JOB_TIMEOUT_S: int = Field(default=300, description="Max job runtime in seconds")
+    JOB_TIMEOUT_S: int = Field(default=600, description="Max job runtime in seconds")
     JOB_TTL_S: int = Field(default=900, description="Time to keep job results in seconds (15 min)")
     PORT: int = Field(default=10000, description="Server port")
 
