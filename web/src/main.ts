@@ -143,9 +143,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const svgHost = document.getElementById("svg-host") as HTMLElement;
       layersPanelController.updateFromSvg(svgHost);
 
-      // Update Metrics Panel
-      updateMetricsView(report);
-
       // Enable download buttons
       enableDownloads(jobId, svgStr, report);
 
@@ -159,44 +156,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-function updateMetricsView(report: any) {
-  const container = document.getElementById("metrics-view");
-  if (!container || !report) return;
-
-  const m = report.metrics || {};
-  const s = report.stats || {};
-  const g = report.gaps || {};
-
-  container.innerHTML = `
-    <div class="metric-row">
-      <span class="metric-label">MAE / Fidelity Error:</span>
-      <span class="metric-val ${m.mae <= 8.14 ? "metric-pass" : "metric-warn"}">${m.mae}</span>
-    </div>
-    <div class="metric-row">
-      <span class="metric-label">PSNR:</span>
-      <span class="metric-val ${m.psnr >= 25.5 ? "metric-pass" : "metric-warn"}">${m.psnr} dB</span>
-    </div>
-    <div class="metric-row">
-      <span class="metric-label">SSIM:</span>
-      <span class="metric-val metric-pass">${m.ssim}</span>
-    </div>
-    <div class="metric-row">
-      <span class="metric-label">Gap Pixels (0.5x, 1x, 2x):</span>
-      <span class="metric-val ${g.total === 0 ? "metric-pass" : "metric-warn"}">
-        ${g.counts ? `${g.counts["0.5x"]} / ${g.counts["1.0x"]} / ${g.counts["2.0x"]}` : "0"}
-      </span>
-    </div>
-    <div class="metric-row">
-      <span class="metric-label">Path Count / Nodes:</span>
-      <span class="metric-val">${s.paths} paths / ${s.nodes} nodes</span>
-    </div>
-    <div class="metric-row">
-      <span class="metric-label">SVG File Size:</span>
-      <span class="metric-val">${s.size_mb || 0} MB (${Math.round((s.size_bytes || 0) / 1024)} KB)</span>
-    </div>
-  `;
-}
 
 function enableDownloads(jobId: string, svgStr: string, report: any) {
   const btnSvg = document.getElementById("btn-dl-svg") as HTMLButtonElement;
