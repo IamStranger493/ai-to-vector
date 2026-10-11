@@ -734,6 +734,20 @@ body {
 #params-container { overflow-y: visible; max-height: none; }
 #viewer-stage { scroll-margin-top: 72px; }
 
+.badge-live {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
 @media (max-width: 960px) {
   body, .app-layout { width: 100%; }
   .app-header {

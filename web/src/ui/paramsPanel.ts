@@ -84,7 +84,7 @@ export function initParamsPanel(onChange: () => void) {
     <!-- Inking / Contour Lines Section -->
     <section class="panel-section">
       <div class="control-label-row" style="margin-bottom: 0.5rem">
-        <h3 class="section-title" style="margin: 0">Contour Ink Lines</h3>
+        <h3 class="section-title" style="margin: 0; display: flex; align-items: center; gap: 6px">Contour Ink Lines <span class="badge-live">LIVE</span></h3>
         <label class="checkbox-row" style="margin: 0">
           <input type="checkbox" id="param-contour-enable" ${appState.params.contour_lines.enabled ? "checked" : ""} />
           <span style="font-size: 0.75rem">Enable</span>
@@ -111,7 +111,7 @@ export function initParamsPanel(onChange: () => void) {
     <!-- Detail Lines Section -->
     <section class="panel-section">
       <div class="control-label-row" style="margin-bottom: 0.5rem">
-        <h3 class="section-title" style="margin: 0">Detail Inking (Hair/Folds)</h3>
+        <h3 class="section-title" style="margin: 0; display: flex; align-items: center; gap: 6px">Detail Inking <span class="badge-live">LIVE</span></h3>
         <label class="checkbox-row" style="margin: 0">
           <input type="checkbox" id="param-detail-enable" ${appState.params.detail_lines.enabled ? "checked" : ""} />
           <span style="font-size: 0.75rem">Enable</span>

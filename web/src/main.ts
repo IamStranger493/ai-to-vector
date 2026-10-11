@@ -66,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initParamsPanel(() => {
     const presetSelect = document.getElementById("preset-select") as HTMLSelectElement;
     if (presetSelect) presetSelect.value = "custom";
+    viewerController.updateLiveSvg(appState.params);
   });
 
   // Preset Selector
@@ -73,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
   presetSelect.addEventListener("change", () => {
     appState.loadPreset(presetSelect.value);
     initParamsPanel(() => {});
+    viewerController.updateLiveSvg(appState.params);
   });
 
   // Save Preset button
@@ -192,13 +194,17 @@ function enableDownloads(jobId: string, svgStr: string, _report: any) {
 
   if (btnLayeredSvg) {
     btnLayeredSvg.disabled = false;
-    btnLayeredSvg.onclick = () => downloadFile("vector_layered.svg", svgStr, "image/svg+xml");
+    btnLayeredSvg.onclick = () => {
+      const currentSvg = viewerController.getSvgString() || svgStr;
+      downloadFile("vector_layered.svg", currentSvg, "image/svg+xml");
+    };
   }
 
   if (btnFlatSvg) {
     btnFlatSvg.disabled = false;
     btnFlatSvg.onclick = () => {
-      const flatSvg = toFlatSvg(svgStr);
+      const currentSvg = viewerController.getSvgString() || svgStr;
+      const flatSvg = toFlatSvg(currentSvg);
       downloadFile("vector_flat.svg", flatSvg, "image/svg+xml");
     };
   }

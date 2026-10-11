@@ -178,6 +178,60 @@ export class ViewerController {
     this.fitToViewport();
   }
 
+  public updateLiveSvg(params: import("../state").PipelineParams) {
+    const svgEl = this.svgHostEl?.querySelector("svg");
+    if (!svgEl) return;
+
+    // 1. Contour Lines Layer
+    const contourLayer = this.svgHostEl.querySelector("#layer-90-lines-contour") as SVGElement | null;
+    if (contourLayer) {
+      contourLayer.style.display = params.contour_lines.enabled ? "inline" : "none";
+      if (params.contour_lines.enabled) {
+        // Adjust opacity based on darken factor (0.1 to 1.0)
+        contourLayer.style.opacity = `${Math.min(1.0, Math.max(0.15, params.contour_lines.darken * 1.4))}`;
+
+        // Scale stroke widths proportionally
+        const paths = contourLayer.querySelectorAll<SVGPathElement>("path");
+        paths.forEach((p) => {
+          let base = parseFloat(p.getAttribute("data-base-width") || "");
+          if (isNaN(base) || base <= 0) {
+            base = parseFloat(p.getAttribute("stroke-width") || "1.5");
+            p.setAttribute("data-base-width", `${base}`);
+          }
+          const scaleFactor = params.contour_lines.width_max / 3.0;
+          p.setAttribute("stroke-width", `${Math.max(0.2, (base * scaleFactor)).toFixed(2)}`);
+        });
+      }
+    }
+
+    // 2. Detail Inking Layer
+    const detailLayer = this.svgHostEl.querySelector("#layer-95-lines-detail") as SVGElement | null;
+    if (detailLayer) {
+      detailLayer.style.display = params.detail_lines.enabled ? "inline" : "none";
+      if (params.detail_lines.enabled) {
+        const paths = detailLayer.querySelectorAll<SVGPathElement>("path");
+        paths.forEach((p) => {
+          const sw = p.getAttribute("stroke-width");
+          if (sw !== null) {
+            let base = parseFloat(p.getAttribute("data-base-width") || "");
+            if (isNaN(base) || base <= 0) {
+              base = parseFloat(sw || "1.0");
+              p.setAttribute("data-base-width", `${base}`);
+            }
+            const scaled = base * params.detail_lines.width_scale;
+            p.setAttribute("stroke-width", `${Math.max(0.2, scaled).toFixed(2)}`);
+          }
+        });
+      }
+    }
+  }
+
+  public getSvgString(): string {
+    const svgEl = this.svgHostEl?.querySelector("svg");
+    if (!svgEl) return "";
+    return new XMLSerializer().serializeToString(svgEl);
+  }
+
   private zoom(factor: number) {
     this.scale = Math.max(0.1, Math.min(this.scale * factor, 20.0));
     this.updateZoomText();
